@@ -1,3 +1,6 @@
 data/
 outputs/
 backups/
+__pycache__/
+.DS_Store
+.vscode/
