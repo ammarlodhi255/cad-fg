@@ -133,6 +133,10 @@ def main(ckpt):
             from src.models.resnet18_backbone import ResNet18Backbone
             model = ResNet18Backbone(pretrained=False).to(device)
             img_feat_dim = model.feat_dim  # 512
+        elif backbone == "effnet_b3":
+            from src.models.effnet_b3_backbone import EfficientNetB3Backbone
+            model = EfficientNetB3Backbone(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 1536
         elif backbone == "effnet_b0":
             from src.models.effnet_backbone import EfficientNetB0Backbone
             model = EfficientNetB0Backbone(pretrained=False).to(device)
@@ -141,6 +145,50 @@ def main(ckpt):
             from src.models.inception_backbone import InceptionV3Backbone
             model = InceptionV3Backbone(pretrained=False).to(device)
             img_feat_dim = model.feat_dim  # 2048
+        elif backbone == "convnext_tiny":
+            from src.models.convnext_backbone import ConvNeXtBackbone
+            model = ConvNeXtBackbone(variant="tiny", pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 768
+        elif backbone == "convnext_base":
+            from src.models.convnext_backbone import ConvNeXtBackbone
+            model = ConvNeXtBackbone(variant="base", pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 1024
+        elif backbone == "mobilenet_v3_large":
+            from src.models.mobilenetv3_backbone import MobileNetV3LargeBackbone
+            model = MobileNetV3LargeBackbone(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 960
+        elif backbone == "mobilenet_v2":
+            from src.models.mobilenetv2_backbone import MobileNetV2Backbone
+            model = MobileNetV2Backbone(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 1280
+        elif backbone == "densenet201":
+            from src.models.densenet_backbone import DenseNet201Backbone
+            model = DenseNet201Backbone(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 1920
+        elif backbone == "densenet121":
+            from src.models.densenet121_backbone import DenseNet121Backbone
+            model = DenseNet121Backbone(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 1024
+        elif backbone == "alexnet":
+            from src.models.alexnet_backbone import AlexNetBackbone
+            model = AlexNetBackbone(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 9216
+        elif backbone == "vit_b16":
+            from src.models.vit_backbone import ViTBackbone
+            model = ViTBackbone(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 768
+        elif backbone == "effnet_b7":
+            from src.models.effnet_b7_backbone import EfficientNetB7Backbone
+            model = EfficientNetB7Backbone(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 2560
+        elif backbone == "effnet_b0_cbam":
+            from src.models.effnetb0_cbam_backbone import EfficientNetB0Backbone
+            model = EfficientNetB0Backbone(pretrained=False, cbam=True).to(device)
+            img_feat_dim = model.feat_dim  # 1280
+        elif backbone == "convnext_base_cbam":
+            from src.models.convnext_base_cbam_backbone import ConvNeXtBaseBackboneCBAM
+            model = ConvNeXtBaseBackboneCBAM(pretrained=False).to(device)
+            img_feat_dim = model.feat_dim  # 1024
         else:
             raise ValueError(f"Unknown backbone: {backbone}")
 
@@ -156,12 +204,68 @@ def main(ckpt):
         elif backbone == "resnet18":
             from src.models.resnet18_backbone import ResNet18EarlyFusionPatient
             model = ResNet18EarlyFusionPatient(tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2).to(device)
+        elif backbone == "effnet_b3":
+            from src.models.effnet_b3_backbone import EfficientNetB3EarlyFusionPatient
+            model = EfficientNetB3EarlyFusionPatient(tab_dim=tab_dim, c_pat=cfg["pat_channels"],
+                                                 pretrained=False, out_dim=2).to(device)
         elif backbone == "effnet_b0":
             from src.models.effnet_backbone import EfficientNetB0EarlyFusionPatient
             model = EfficientNetB0EarlyFusionPatient(tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2).to(device)
         elif backbone == "inception_v3":
             from src.models.inception_backbone import InceptionV3EarlyFusionPatient
             model = InceptionV3EarlyFusionPatient(tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2).to(device)
+        elif backbone == "convnext_tiny":
+            from src.models.convnext_backbone import ConvNeXtEarlyFusionPatient
+            model = ConvNeXtEarlyFusionPatient(variant="tiny", tab_dim=tab_dim, c_pat=cfg["pat_channels"],
+                                           pretrained=False, out_dim=2).to(device)
+        elif backbone == "convnext_base":
+            from src.models.convnext_backbone import ConvNeXtEarlyFusionPatient
+            model = ConvNeXtEarlyFusionPatient(variant="base", tab_dim=tab_dim, c_pat=cfg["pat_channels"],
+                                           pretrained=False, out_dim=2).to(device)
+        elif backbone == "mobilenet_v3_large":
+            from src.models.mobilenetv3_backbone import MobileNetV3LargeEarlyFusionPatient
+            model = MobileNetV3LargeEarlyFusionPatient(
+                tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2
+            ).to(device)
+        elif backbone == "mobilenet_v2":
+            from src.models.mobilenetv2_backbone import MobileNetV2EarlyFusionPatient
+            model = MobileNetV2EarlyFusionPatient(
+                tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2
+            ).to(device)
+        elif backbone == "densenet201":
+            from src.models.densenet_backbone import DenseNet201EarlyFusionPatient
+            model = DenseNet201EarlyFusionPatient(
+                tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2
+            ).to(device)
+        elif backbone == "densenet121":
+            from src.models.densenet121_backbone import DenseNet121EarlyFusionPatient
+            model = DenseNet121EarlyFusionPatient(tab_dim=tab_dim, c_pat=cfg["pat_channels"],
+                                              pretrained=False, out_dim=2).to(device)
+        elif backbone == "alexnet":
+            from src.models.alexnet_backbone import AlexNetEarlyFusionPatient
+            model = AlexNetEarlyFusionPatient(
+                tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2
+            ).to(device)
+        elif backbone == "vit_b16":
+            from src.models.vit_backbone import ViTEarlyFusionPatient
+            model = ViTEarlyFusionPatient(
+                tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2
+            ).to(device)
+        elif backbone == "effnet_b7":
+            from src.models.effnet_b7_backbone import EfficientNetB7EarlyFusionPatient
+            model = EfficientNetB7EarlyFusionPatient(
+                tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2
+            ).to(device)
+        elif backbone == "effnet_b0_cbam":
+            from src.models.effnetb0_cbam_backbone import EfficientNetB0EarlyFusionPatient
+            model = EfficientNetB0EarlyFusionPatient(
+                tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2, cbam=True
+            ).to(device)
+        elif backbone == "convnext_base_cbam":
+            from src.models.convnext_base_cbam_backbone import ConvNeXtBaseEarlyFusionPatientCBAM
+            model = ConvNeXtBaseEarlyFusionPatientCBAM(
+                tab_dim=tab_dim, c_pat=cfg["pat_channels"], pretrained=False, out_dim=2
+            ).to(device)
         else:
             raise ValueError(f"Unknown backbone: {backbone}")
         clin_mlp = head = None
@@ -174,12 +278,48 @@ def main(ckpt):
         elif backbone == "resnet18":
             from src.models.resnet18_backbone import ResNet18Backbone
             model = ResNet18Backbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "effnet_b3":
+            from src.models.effnet_b3_backbone import EfficientNetB3Backbone
+            model = EfficientNetB3Backbone(pretrained=False, out_dim=2).to(device)
         elif backbone == "effnet_b0":
             from src.models.effnet_backbone import EfficientNetB0Backbone
             model = EfficientNetB0Backbone(pretrained=False, out_dim=2).to(device)
         elif backbone == "inception_v3":
             from src.models.inception_backbone import InceptionV3Backbone
             model = InceptionV3Backbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "convnext_tiny":
+            from src.models.convnext_backbone import ConvNeXtBackbone
+            model = ConvNeXtBackbone(variant="tiny", pretrained=False, out_dim=2).to(device)
+        elif backbone == "convnext_base":
+            from src.models.convnext_backbone import ConvNeXtBackbone
+            model = ConvNeXtBackbone(variant="base", pretrained=False, out_dim=2).to(device)
+        elif backbone == "mobilenet_v3_large":
+            from src.models.mobilenetv3_backbone import MobileNetV3LargeBackbone
+            model = MobileNetV3LargeBackbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "mobilenet_v2":
+            from src.models.mobilenetv2_backbone import MobileNetV2Backbone
+            model = MobileNetV2Backbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "densenet201":
+            from src.models.densenet_backbone import DenseNet201Backbone
+            model = DenseNet201Backbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "densenet121":
+            from src.models.densenet121_backbone import DenseNet121Backbone
+            model = DenseNet121Backbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "alexnet":
+            from src.models.alexnet_backbone import AlexNetBackbone
+            model = AlexNetBackbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "vit_b16":
+            from src.models.vit_backbone import ViTBackbone
+            model = ViTBackbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "effnet_b7":
+            from src.models.effnet_b7_backbone import EfficientNetB7Backbone
+            model = EfficientNetB7Backbone(pretrained=False, out_dim=2).to(device)
+        elif backbone == "effnet_b0_cbam":
+            from src.models.effnetb0_cbam_backbone import EfficientNetB0Backbone
+            model = EfficientNetB0Backbone(pretrained=False, out_dim=2, cbam=True).to(device)
+        elif backbone == "convnext_base_cbam":
+            from src.models.convnext_base_cbam_backbone import ConvNeXtBaseBackboneCBAM
+            model = ConvNeXtBaseBackboneCBAM(pretrained=False, out_dim=2).to(device)
         else:
             raise ValueError(f"Unknown backbone: {backbone}")
         clin_mlp = head = None
@@ -211,7 +351,7 @@ def main(ckpt):
         print(f"{k:10s}: {v:.4f}")
 
     # optional: save the per-video probabilities/labels
-    # video_df.to_csv("outputs/test_video_probs.csv", index=False)
+    video_df.to_csv("outputs/test_video_probs.csv", index=False)
 
     # --- aggregate to video-level (max over frames) ---
     # df = pd.read_csv(te_csv)

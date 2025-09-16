@@ -1,5 +1,9 @@
 import os, cv2, torch, pandas as pd, numpy as np
 from torch.utils.data import Dataset
+import re, torch, os, json
+from typing import Dict, List, Optional
+from .dataset import *  # if you’re pasting at bottom, adjust imports
+from src.text.encoders import load_sentence_encoder, encode_texts
 
 # Numeric & categorical spec (aligned to your CSV)
 CLIN_NUM = ["age","height","weight","bmi","evol_dm_years","lvef_pct","n_vessels","max_involvement_pct"]
@@ -86,81 +90,6 @@ def _safe_num_col(df, key):
     v = pd.to_numeric(df.get(key, pd.Series([np.nan]*len(df))), errors="coerce")
     return v
 
-# def build_meta_vectors(meta_df):
-#     df = meta_df.copy()
-
-#     # ---- Derive/fix numeric fields ----
-#     # Coerce to numeric
-#     for k in ["age","height","weight","bmi","evol_dm_years","lvef_pct","n_vessels","max_involvement_pct"]:
-#         if k in df.columns:
-#             df[k] = _safe_num_col(df, k)
-
-#     # If BMI missing but height+weight present, compute BMI = kg / m^2
-#     if {"bmi","height","weight"}.issubset(df.columns):
-#         mask = df["bmi"].isna() & df["height"].gt(0) & df["weight"].gt(0)
-#         df.loc[mask, "bmi"] = df.loc[mask, "weight"] / (df.loc[mask, "height"] ** 2)
-
-#     # If LVEF given as text categories in your sheet (sometimes happens), map to % midpoints
-#     if "lvef_pct" in df.columns:
-#         # normalize stringy entries
-#         txt = meta_df.get("lvef_pct").astype(str).str.strip().str.lower()
-#         map_txt = {
-#             "normal": 60.0, "mild": 50.0, "moderate": 40.0, "severe": 25.0,
-#             "mild dysfunction": 50.0, "moderate dysfunction": 40.0,
-#             "severe dysfunction": 25.0
-#         }
-#         # only fill where lvef_pct is NaN and text looks like category
-#         fill_idx = df["lvef_pct"].isna() & txt.isin(map_txt)
-#         df.loc[fill_idx, "lvef_pct"] = txt[fill_idx].map(map_txt)
-
-#     # Reasonable ranges clamp to kill outliers or unit mistakes
-#     clamps = {
-#         "age": (18, 100),
-#         "height": (1.3, 2.1),
-#         "weight": (35, 200),
-#         "bmi": (12, 60),
-#         "evol_dm_years": (0, 60),
-#         "lvef_pct": (10, 80),
-#         "n_vessels": (0, 4),
-#         "max_involvement_pct": (0, 100),
-#     }
-#     for k,(lo,hi) in clamps.items():
-#         if k in df.columns:
-#             df[k] = df[k].clip(lower=lo, upper=hi)
-
-#     # ---- Z-score numeric (robust) and fill remaining NaNs with 0 ----
-#     for k in CLIN_NUM:
-#         if k in df.columns:
-#             v = pd.to_numeric(df[k], errors="coerce")
-#             m = v.median(skipna=True)
-#             mad = (v - m).abs().median(skipna=True)
-#             s = float(mad * 1.4826) if pd.notna(mad) and mad > 1e-6 else float(v.std(skipna=True) or 1.0)
-#             df[k] = (v - (m if pd.notna(m) else 0.0)) / (s if s else 1.0)
-#         else:
-#             df[k] = 0.0  # missing column -> zeros
-
-#     # ---- Categorical one-hots (guaranteed finite) ----
-#     out = {}
-#     for pid, rows in df.groupby("patient"):
-#         row = rows.iloc[0]
-
-#         num = np.array([row.get(k, 0.0) for k in CLIN_NUM], dtype=np.float32)
-#         num = np.nan_to_num(num, nan=0.0, posinf=0.0, neginf=0.0)
-
-#         cat = []
-#         for k in CLIN_CAT:
-#             val = str(row.get(k, "")).strip().lower()
-#             base = CAT_VALS.get(k, ["no","yes"])
-#             onehot = [1.0 if val == b else 0.0 for b in base]
-#             cat.extend(onehot)
-
-#         vec = np.concatenate([num, np.array(cat, dtype=np.float32)], axis=0)
-#         # final safety: finite only
-#         vec = np.nan_to_num(vec, nan=0.0, posinf=0.0, neginf=0.0)
-#         vec = np.clip(vec, -10.0, 10.0)
-#         out[int(pid)] = vec
-
-#     return out
 
 def build_meta_vectors(meta_df, selected_features=None):
     """
@@ -265,23 +194,6 @@ def build_meta_vectors(meta_df, selected_features=None):
     return out
 
 class CadicaDataset(Dataset):
-    # def __init__(self, csv_path, metadata_path, tfm):
-    #     self.df = pd.read_csv(csv_path)
-    #     self.meta_df = load_metadata_any(metadata_path)
-    #     self.meta = build_meta_vectors(self.meta_df)
-    #     self.tfm = tfm
-    #     any_pid = int(self.df.iloc[0]["patient"])
-    #     self.tab_dim = len(self.meta[int(any_pid)])
-
-    # def __init__(self, csv_path, metadata_path, tfm, selected_features=None):
-    #     self.df = pd.read_csv(csv_path)
-    #     self.meta_df = load_metadata_any(metadata_path)
-    #     self.selected_features = selected_features
-    #     self.meta = build_meta_vectors(self.meta_df, selected_features=self.selected_features)
-    #     self.tfm = tfm
-    #     any_pid = int(self.df.iloc[0]["patient"])
-    #     self.tab_dim = len(self.meta[int(any_pid)])
-
     def __init__(self, csv_path, metadata_path, tfm, selected_features=None):
         self.df = pd.read_csv(csv_path)
         self.meta_df = load_metadata_any(metadata_path)
@@ -335,3 +247,6 @@ class CadicaDataset(Dataset):
     def get_feature_groups(self):
         """Original (pre-one-hot) feature groups actually used."""
         return {"numeric": list(self.used_num), "categorical": list(self.used_cat)}
+
+
+
