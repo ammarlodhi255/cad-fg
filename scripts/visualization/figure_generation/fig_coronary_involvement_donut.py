@@ -36,11 +36,10 @@ wedges, _ = ax.pie(
     startangle=90,
     counterclock=False,
     colors=colors,
-    # Thinner ring -> larger center hole so the label fits on one line
-    wedgeprops=dict(width=0.28, edgecolor="#2b2b2b", linewidth=1.0),
+    wedgeprops=dict(width=0.45, edgecolor="#2b2b2b", linewidth=1.0),
 )
 
-ax.text(0, 0, "Max Involvement", ha="center", va="center", fontsize=16)
+ax.text(0, 0, "MI", ha="center", va="center", fontsize=16)
 ax.set(aspect="equal")
 
 legend_labels = [f"{l}: {v:.1f}%" for l, v in zip(labels, sizes)]

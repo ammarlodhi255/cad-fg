@@ -13,10 +13,10 @@ from captum.attr import IntegratedGradients
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.dataio.dataset import load_metadata_any, build_meta_vectors
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from meta_analysis.src.meta_model import MetadataOnlyMLP, MetadataOnlyResidualMLP
+from meta_analysis.src.meta_model import MetadataFusionMLP, MetadataResidualMLP
 
 class MetadataOnlyDataset(Dataset):
-    def __init__(self, csv_path, metadata_path, selected_features=None):
+    def __init__(self, csv_path, metadata_path, selected_features=None, text_encoder=None):
         self.df = pd.read_csv(csv_path)
         self.meta_df = load_metadata_any(metadata_path)
         self.meta = build_meta_vectors(self.meta_df, selected_features=selected_features)
@@ -25,16 +25,44 @@ class MetadataOnlyDataset(Dataset):
         any_pid = int(self.df.iloc[0]["patient"])
         self.tab_dim = len(self.meta[any_pid])
         
+        # Setup text features if provided
+        self.text_encoder = text_encoder
+        self.text_fields = selected_features.get("text", []) if selected_features else []
+        if self.text_encoder and self.text_fields:
+            # Pre-compute text embeddings for each patient
+            self.text_embeddings = {}
+            for pid, rows in self.meta_df.groupby("patient"):
+                row = rows.iloc[0]
+                text_dict = {field: str(row.get(field, "")) for field in self.text_fields}
+                self.text_embeddings[int(pid)] = process_text_features(text_dict, self.text_encoder)
+            
+            # Get text embedding dimension
+            self.text_dim = next(iter(self.text_embeddings.values())).shape[0]
+        else:
+            self.text_dim = 0
+        
     def __len__(self):
         return len(self.df)
     
     def __getitem__(self, i):
         r = self.df.iloc[i]
         pid = int(r.patient)
-        x = torch.tensor(self.meta[pid], dtype=torch.float32)
+        
+        # Get tabular features
+        x_tab = torch.tensor(self.meta[pid], dtype=torch.float32)
+        
+        # Get text features if available
+        if self.text_encoder and self.text_fields:
+            x_text = self.text_embeddings[pid]
+        else:
+            x_text = torch.zeros(self.text_dim, dtype=torch.float32)
+        
         y = torch.tensor(int(r.label), dtype=torch.long)
+        
         return {
-            "x": x, "y": y,
+            "x_tab": x_tab,
+            "x_text": x_text,
+            "y": y,
             "patient": pid,
             "video": int(r.video),
             "frame": int(r.frame)
@@ -125,27 +153,46 @@ def plot_feature_importance(importance, epoch, save_dir):
     importance.to_csv(save_dir / f'feature_importance_epoch_{epoch+1}.csv')
 
 def main():
+    # Load config
+    with open("configs/default.yaml") as f:
+        cfg = yaml.safe_load(f)
+    
     # Settings
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    batch_size = 32
-    epochs = 50
-    lr = 1e-3
-    patience = 10  # early stopping
+    batch_size = cfg.get("batch_size", 32)
+    epochs = cfg.get("epochs", 50)
+    lr = cfg.get("lr", 1e-3)
+    patience = cfg.get("early_stopping_patience", 10)
     
-    # Data
-    metadata_path = "data/CADICA/metadata.xlsx"
+    # Data paths
+    metadata_path = cfg.get("metadata_path", "data/CADICA/metadata.xlsx")
     train_csv = "outputs/index/train.csv"
     val_csv = "outputs/index/val.csv"
     
-    # Optional: feature selection
-    selected_features = {
-        "numeric": ["age", "bmi", "height", "weight", "evol_dm_years", "lvef_pct", "n_vessels", "max_involvement_pct"],
-        "categorical": ["sex", "diabetes", "smoker", "hypertension", "dyslipidemia", "kidney_failure", "heart_failure", "atrial_fib"]
-    }
+    # Initialize text encoder if text features are specified
+    text_encoder = None
+    if cfg.get("metadata_features", {}).get("text"):
+        from meta_analysis.src.text_encoder import TextFeatureEncoder
+        text_encoder = TextFeatureEncoder(
+            model_name=cfg.get("text_encoder", "sentence-transformers/all-MiniLM-L6-v2"),
+            cache_dir=cfg.get("text_cache_dir", "outputs/text_embeds")
+        )
+    
+    # Get feature selection from config
+    selected_features = cfg.get("metadata_features", {})
+    if not selected_features:
+        selected_features = {
+            "numeric": ["age", "bmi", "height", "weight", "evol_dm_years", "lvef_pct", "n_vessels", "max_involvement_pct"],
+            "categorical": ["sex", "diabetes", "smoker", "hypertension", "dyslipidemia", "kidney_failure", "heart_failure", "atrial_fib"]
+        }
     
     # Datasets
-    train_ds = MetadataOnlyDataset(train_csv, metadata_path, selected_features)
-    val_ds = MetadataOnlyDataset(val_csv, metadata_path, selected_features)
+    train_ds = MetadataOnlyDataset(train_csv, metadata_path, selected_features, text_encoder)
+    val_ds = MetadataOnlyDataset(val_csv, metadata_path, selected_features, text_encoder)
+    
+    print("\nFeature dimensions:")
+    print(f"Tabular features: {train_ds.tab_dim}")
+    print(f"Text features: {train_ds.text_dim}")
     
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=batch_size)
@@ -154,13 +201,15 @@ def main():
     
     # Model variants
     models = {
-        "mlp": MetadataOnlyMLP(
-            in_dim=train_ds.tab_dim,
+        "mlp": MetadataFusionMLP(
+            tabular_dim=train_ds.tab_dim,
+            text_dim=train_ds.text_dim,
             hidden_dims=[128, 64, 32],
             dropout=0.3
         ),
-        "residual": MetadataOnlyResidualMLP(
-            in_dim=train_ds.tab_dim,
+        "residual": MetadataResidualMLP(
+            tabular_dim=train_ds.tab_dim,
+            text_dim=train_ds.text_dim,
             hidden_dim=128,
             n_blocks=3,
             dropout=0.3
@@ -187,11 +236,12 @@ def main():
             n_batches = 0
             
             for batch_idx, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=False)):
-                x = batch["x"].to(device)
+                x_tab = batch["x_tab"].to(device)
+                x_text = batch["x_text"].to(device)
                 y = batch["y"].to(device)
                 
                 optimizer.zero_grad()
-                logits = model(x)
+                logits = model(x_tab, x_text)
                 loss = criterion(logits, y)
                 loss.backward()
                 optimizer.step()

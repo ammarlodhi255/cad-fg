@@ -15,7 +15,7 @@
 
 import numpy as np
 from sklearn.metrics import (
-    balanced_accuracy_score, f1_score, roc_auc_score,
+    balanced_accuracy_score, f1_score, roc_auc_score, average_precision_score,
     accuracy_score, recall_score, precision_score,
     cohen_kappa_score, confusion_matrix
 )
@@ -33,6 +33,10 @@ def metrics_from_probs(y_true, y_prob, thr=0.5):
         out["auc"]   = roc_auc_score(y_true, y_prob)
     except Exception:
         out["auc"]   = float("nan")
+    try:
+        out["ap"]    = average_precision_score(y_true, y_prob)
+    except Exception:
+        out["ap"]    = float("nan")
 
     # confusion-matrix based rates
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
