@@ -60,10 +60,6 @@ def build_models(backbone: str, fusion: str, tab_dim: int, pat_channels: int, de
         elif backbone == "convnext_base":
             from src.models.convnext_backbone import ConvNeXtBackbone
             img_model = ConvNeXtBackbone(variant="base", pretrained=True).to(device); img_feat_dim = img_model.feat_dim
-        elif backbone.startswith("convnextv2_") or backbone == "convnextv2":
-            from src.models.convnextv2_backbone import ConvNeXtV2Backbone
-            variant = backbone.split("_", 1)[1] if "_" in backbone else "tiny"
-            img_model = ConvNeXtV2Backbone(variant=variant, pretrained=True).to(device); img_feat_dim = img_model.feat_dim
         elif backbone == "mobilenet_v2":
             from src.models.mobilenetv2_backbone import MobileNetV2Backbone
             img_model = MobileNetV2Backbone(pretrained=True).to(device); img_feat_dim = img_model.feat_dim
@@ -319,6 +315,7 @@ def main():
     ap.add_argument("--aug_max_per_frame", type=int, default=5, help="Max number of augmented copies per original frame in inner-train")
     ap.add_argument("--aug_img_size", type=int, default=None, help="Optional resize max-size for augmentation images")
     ap.add_argument("--aug_root", default="data/augmented-cadica", help="Directory to write augmented images under selectedVideos/p#/v#/input/")
+    ap.add_argument("--log_aug_examples", action="store_true", help="If set, prints a few augmented file paths per fold for verification")
     ap.add_argument("--final_test_eval", action="store_true", help="After CV per model, retrain on all non-test data and evaluate on pristine test")
     ap.add_argument("--test_csv", default="outputs/index/test_pristine.csv", help="Path to pristine test CSV")
     ap.add_argument("--trainval_pool_csv", default="outputs/index/trainval_pool.csv", help="Combined non-test pool for final training")
@@ -646,6 +643,7 @@ def main():
 
                     if extra_needed > 0 and orig_ct > 0:
                         aug = _build_aug_pipe(args.aug_img_size)
+                        print(f"[augment] {fold_name} enabled | label={tgt_label} | match={bool(args.aug_match_count)} | factor={None if args.aug_match_count else factor} | max_per={int(args.aug_max_per_frame)} | albu={'on' if aug is not None else 'off'}")
                         # Candidate rows of chosen label
                         cand = inner_tr_df[inner_tr_df['label'] == tgt_label].copy()
                         used_count = {}
@@ -710,6 +708,11 @@ def main():
                             # Write temp CSV for this fold
                             aug_csv = os.path.join(fold_out, 'inner_train_aug.csv')
                             inner_aug_df.to_csv(aug_csv, index=False)
+                            # Count augmented rows and negatives among them
+                            aug_tag = os.path.join(args.aug_root, 'selectedVideos')
+                            is_aug = inner_aug_df['img_path'].astype(str).str.contains(aug_tag.replace('\\','/'))
+                            aug_rows_ct = int(is_aug.sum())
+                            aug_neg_rows_ct = int(((inner_aug_df['label']==0) & is_aug).sum())
                             # Rebuild inner-train dataset from augmented CSV using train transforms and existing stats
                             inner_tr_ds = CadicaDataset(
                                 aug_csv, metadata, get_train_tf(img_size),
@@ -723,14 +726,23 @@ def main():
                             new_pos = int((inner_aug_df['label'] == 1).sum())
                             new_neg = int((inner_aug_df['label'] == 0).sum())
                             print(f"[augment] {fold_name} inner-train: +{produced} label={tgt_label} -> pos={new_pos} neg={new_neg} (was pos={pos_ct} neg={neg_ct})")
+                            print(f"[augment] {fold_name} csv={aug_csv} | rows={len(inner_aug_df)} | aug_rows={aug_rows_ct} | aug_neg_rows={aug_neg_rows_ct}")
+                            if args.log_aug_examples:
+                                ex = inner_aug_df[is_aug].head(3)['img_path'].tolist()
+                                print(f"[augment] {fold_name} sample_aug_paths: {ex}")
 
+                bs = cfg.get("batch_size", 64)
                 tr_loader = DataLoader(
                     inner_tr_ds,
-                    batch_size=cfg.get("batch_size", 64),
+                    batch_size=bs,
                     shuffle=True,
                     num_workers=args.num_workers,
                     pin_memory=True,
                 )
+                try:
+                    print(f"[loader] {fold_name} train_len={len(inner_tr_ds)} batches={len(tr_loader)} batch_size={bs}")
+                except Exception:
+                    pass
                 inner_va_loader = DataLoader(
                     inner_va_ds,
                     batch_size=cfg.get("batch_size", 64),

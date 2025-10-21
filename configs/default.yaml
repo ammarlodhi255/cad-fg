@@ -37,7 +37,7 @@ metadata_features:
   text:
     - another_comorb # another comorbidity (e.g. hypertension, diabetes, etc.)
     - indication # indication for angiography (e.g. chest pain, shortness of breath, etc.)
-    - later_events # later events (e.g. myocardial infarction, stroke, etc.)
+    # - later_events # later events (e.g. myocardial infarction, stroke, etc.)
 
 text_encoder: "sentence-transformers/all-MiniLM-L6-v2"
 text_cache_dir: "outputs/text_embeds"
