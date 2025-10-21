@@ -4,3 +4,8 @@ backups/
 __pycache__/
 .DS_Store
 .vscode/
+checks.ipynb
+**/gitkeep
+no-longer-needed/
+*.pt
+checkpoints/
