@@ -3,7 +3,7 @@ backbone: resnet50  # options: resnet50, effnet_b0, inception_v3, resnet18, effn
 seed: 1337
 img_size: 224 # change this to 224 for others and 299 for inception_v3, 300 for effnet_b3, 600 for effnet_b7
 batch_size: 64
-epochs: 100
+epochs: 1
 # lr: 0.0001 # 0.001, 0.0001, 0.01, 0.00001
 lr: 0.0001 # 0.001, 0.0001, 0.01, 0.00001
 early_stopping_patience: 20  # stop if no val improvement for n epochs
@@ -21,8 +21,8 @@ metadata_features:
     - bmi          # Body Mass Index
     - evol_dm_years   # Evolution of diabetes (years)
     - lvef_pct        # Left ventricular ejection fraction (%)
-    - n_vessels       # Number of vessels affected
-    - max_involvement_pct  # Maximum degree of coronary artery involvement (%)
+    # - n_vessels       # Number of vessels affected
+    # - max_involvement_pct  # Maximum degree of coronary artery involvement (%)
 
   categorical:
     - sex             # Male / Female
@@ -42,3 +42,6 @@ metadata_features:
 text_encoder: "sentence-transformers/all-MiniLM-L6-v2"
 text_cache_dir: "outputs/text_embeds"
 metadata_path: "data/CADICA/metadata.xlsx"
+
+
+# yet to train: effnet_b7

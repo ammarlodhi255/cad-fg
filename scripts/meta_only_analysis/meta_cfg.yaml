@@ -1,0 +1,49 @@
+backbone: resnet50  # options: resnet50, effnet_b0, inception_v3, resnet18, effnet_b3, mobilenet_v3_large, mobilenet_v2, convnext_tiny, convnext_base, densenet201, densenet121, alexnet, vit_b16, effnet_b7, effnet_b0_cbam, convnext_base_cbam, metafusionnet_base, metafusionnet_tiny, vgg16, vgg-16, vgg19, vgg-19, regnet_y_800mf, regnet_y_1_6gf, repvgg_a2, xception, condensenet, mobilenet_v3_small, inception_resnet_v2, convnextv2
+
+seed: 1337
+img_size: 224 # change this to 224 for others and 299 for inception_v3, 300 for effnet_b3, 600 for effnet_b7
+batch_size: 64
+epochs: 100
+# lr: 0.0001 # 0.001, 0.0001, 0.01, 0.00001
+lr: 0.0001 # 0.001, 0.0001, 0.01, 0.00001
+early_stopping_patience: 20  # stop if no val improvement for n epochs
+# optimizer: rmsprop         # RMSprop/SGD worked well in the paper
+optimizer: rmsprop         # RMSprop/SGD worked well in the paper
+weight_decay: 0.0001
+fusion:  late              # {late, early, imageonly}
+pat_channels: 4            # {4, 8} only used for early fusion
+save_dir: outputs
+metadata_features:
+  numeric:
+    - age          # Age (years)
+    - height       # Height (m)
+    - weight       # Weight (kg)
+    - bmi          # Body Mass Index
+    - evol_dm_years   # Evolution of diabetes (years)
+    - lvef_pct        # Left ventricular ejection fraction (%)
+    # - n_vessels       # Number of vessels affected
+    # - max_involvement_pct  # Maximum degree of coronary artery involvement (%)
+
+  categorical:
+    - sex             # Male / Female
+    - diabetes        # Diabetes mellitus (yes/no)
+    - dyslipidemia    # Dyslipidemia (yes/no)
+    - smoker          # Smoker (yes/no)
+    - hypertension    # High blood pressure (yes/no)
+    - kidney_failure  # Kidney failure (yes/no)
+    - heart_failure   # Heart failure (yes/no)
+    - atrial_fib      # Atrial fibrillation (yes/no)
+
+  text:
+    - another_comorb # another comorbidity (e.g. hypertension, diabetes, etc.)
+    - indication # indication for angiography (e.g. chest pain, shortness of breath, etc.)
+    # - later_events # later events (e.g. myocardial infarction, stroke, etc.)
+
+text_encoder: "sentence-transformers/all-MiniLM-L6-v2"
+text_cache_dir: "outputs/text_embeds"
+metadata_path: "data/CADICA/metadata.xlsx"
+
+# none important: - sex     
+    # - lvef_pct        # Left ventricular ejection fraction (%)    
+     # - height       # Height (m)
+         # - max_involvement_pct  # Maximum degree of coronary artery involvement (%)

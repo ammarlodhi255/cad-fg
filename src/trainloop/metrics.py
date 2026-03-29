@@ -42,6 +42,11 @@ def metrics_from_probs(y_true, y_prob, thr=0.5):
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     out["fpr"] = fp / (fp + tn + 1e-8)
     out["fnr"] = fn / (fn + tp + 1e-8)
+    # Common clinical names
+    out["specificity"] = tn / (tn + fp + 1e-8)
+    out["sensitivity"] = out["recall"]
+    out["ppv"] = out["precision"]
+    out["npv"] = tn / (tn + fn + 1e-8)
 
     # inter-rater agreement
     out["kappa"] = cohen_kappa_score(y_true, y_pred)

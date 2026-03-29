@@ -8,7 +8,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 out_dir = os.path.join(script_dir, "output_figures")
 os.makedirs(out_dir, exist_ok=True)
 
-PALETTE = ["#A5CDE2", "#2078B3", "#B2DF8A", "#FEBE70", "#FA9B9A"]
+# PALETTE = ["#A5CDE2", "#2078B3", "#B2DF8A", "#FEBE70", "#FA9B9A"]
+PALETTE = ["#2078B3", "#FA9B9A", "#B2DF8A", "#FEBE70", "#FA9B9A"]
 
 # Data
 indications = {

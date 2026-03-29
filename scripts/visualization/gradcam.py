@@ -7,7 +7,6 @@ class GradCAM:
         layer = dict([*self._named_modules(model)])[target_layer_name]
         self.fmap = None; self.grad = None
         layer.register_forward_hook(self._fwd_hook)
-        layer.register_backward_hook(self._bwd_hook)
 
     def _named_modules(self, m, prefix=""):
         for n, mod in m.named_children():
@@ -15,8 +14,11 @@ class GradCAM:
             yield name, mod
             yield from self._named_modules(mod, name)
 
-    def _fwd_hook(self, mod, inp, out): self.fmap = out
-    def _bwd_hook(self, mod, gin, gout): self.grad = gout[0]
+    def _fwd_hook(self, mod, inp, out):
+        self.fmap = out
+        self.grad = None
+        if out.requires_grad:
+            out.register_hook(lambda g: setattr(self, 'grad', g))
 
     def __call__(self, forward_logits_fn, class_idx=1):
         logits = forward_logits_fn()

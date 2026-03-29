@@ -6,11 +6,19 @@ import numpy as np
 import pandas as pd
 
 def train_one_epoch(model, optimizer, loader, device, mode="late", clin_mlp=None, late_head=None,
-                    pim_lambdas: dict | None = None, pim_update_freq: int = 1, use_amp: bool = False):
+                    pim_lambdas: dict | None = None, pim_update_freq: int = 1, use_amp: bool = False,
+                    class_weights=None):
     model.train()
     if clin_mlp: clin_mlp.train()
     if late_head: late_head.train()
-    ce = torch.nn.CrossEntropyLoss()
+    if class_weights is not None:
+        try:
+            w = class_weights.to(device)
+        except Exception:
+            w = class_weights
+        ce = torch.nn.CrossEntropyLoss(weight=w)
+    else:
+        ce = torch.nn.CrossEntropyLoss()
     # AMP: prefer torch.amp (new API), fall back to torch.cuda.amp for older torch
     try:
         scaler = torch.amp.GradScaler('cuda', enabled=use_amp)
