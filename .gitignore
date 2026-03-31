@@ -12,3 +12,5 @@ checkpoints/
 classification_heatmaps_with_bbox/
 meta_analysis/
 scripts/meta_only_analysis/results_cv/
+checks.ipynb
+.codex
