@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "source": "outputs/index/all_keyframes.csv (entire dataset)",
+    "excluded_patients": [],
+    "n_unique_patients_all": 42,
+    "test_splitter": "RandomGroupSplit (no stratification: single-class patients)",
+    "n_test_patients": 4,
+    "n_rest_patients": 38,
+    "cv_splitter": "GroupKFold (no stratification: single-class patients)",
+    "n_splits": 5,
+    "seed": 1337,
+    "test_csv": "outputs/index/test_pristine.csv",
+    "trainval_pool_csv": "outputs/index/trainval_pool.csv"
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "n_train_patients": 30,
+      "n_val_patients": 8,
+      "train_pos": 30,
+      "train_neg": 0,
+      "val_pos": 8,
+      "val_neg": 0
+    },
+    {
+      "fold": 1,
+      "n_train_patients": 30,
+      "n_val_patients": 8,
+      "train_pos": 30,
+      "train_neg": 0,
+      "val_pos": 8,
+      "val_neg": 0
+    },
+    {
+      "fold": 2,
+      "n_train_patients": 30,
+      "n_val_patients": 8,
+      "train_pos": 30,
+      "train_neg": 0,
+      "val_pos": 8,
+      "val_neg": 0
+    },
+    {
+      "fold": 3,
+      "n_train_patients": 31,
+      "n_val_patients": 7,
+      "train_pos": 31,
+      "train_neg": 0,
+      "val_pos": 7,
+      "val_neg": 0
+    },
+    {
+      "fold": 4,
+      "n_train_patients": 31,
+      "n_val_patients": 7,
+      "train_pos": 31,
+      "train_neg": 0,
+      "val_pos": 7,
+      "val_neg": 0
+    }
+  ]
+}

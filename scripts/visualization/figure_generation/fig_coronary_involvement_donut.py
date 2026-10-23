@@ -12,8 +12,8 @@ PALETTE = ["#A5CDE2", "#2078B3", "#B2DF8A", "#FEBE70", "#FA9B9A"]
 # Data (percent)
 data = {
     "< 20%": 14.3,
-    "20%–50%": 66.7,
-    "> 70%": 19.0,
+    "20%–50%": 19.0,
+    "> 70%": 66.7,
 }
 
 labels = list(data.keys())
